@@ -30,7 +30,7 @@ class HttpResponse():
         self.isFile = isFile
         self.status_code = status_code
         self.data = data
-        self.status_dict = {200: "OK", 404: "Not Found"}
+        self.status_dict = {200: "OK", 404: "Not Found", 201: "Created"}
 
     def encode(self):
         contentType = "text/plain" if not self.isFile else "application/octet-stream"
@@ -53,7 +53,6 @@ def handle_request(server_socket):
         client_socket, _ = server_socket.accept() # wait for client
         data = client_socket.recv(1024)
         request = HttpRequest(data)
-        print("request ", request.path, request.user_agent)
         try:
             if request.path == "/":
                 # response = HttpResponse(200)
@@ -65,13 +64,16 @@ def handle_request(server_socket):
                 response = HttpResponse(200, arg)
             elif "files" in request.path:
                 file_name = request.path.split("/")[-1]
-                if file_name in os.listdir(directory):
-                    with open(os.path.join(directory, file_name)) as f:
-                        s = f.read()
-                        response = HttpResponse(200, s, isFile=True)
-                        f.close()
-                else:
-                    raise Exception("not found")
+                if request.method == "GET":
+                    if file_name in os.listdir(directory):
+                        with open(os.path.join(directory, file_name)) as f:
+                            s = f.read()
+                            response = HttpResponse(200, s, isFile=True)
+                            f.close()
+                    else:
+                        raise Exception("not found")
+                elif request.method == "POST":
+                    pass
             else:
                 raise Exception("not found")
         except Exception:
